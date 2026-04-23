@@ -32,7 +32,7 @@ services:
     depends_on:
       sales-agent-db:
         condition: service_healthy
-    command: ["pnpm", "migration:run:dist"]
+    command: ["node", "./node_modules/typeorm/cli.js", "-d", "dist/data-source.js", "migration:run"]
     restart: "no"
 
   sales-agent-db:
