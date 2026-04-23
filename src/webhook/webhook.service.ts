@@ -82,7 +82,13 @@ export class WebhookService {
       const fallbackName =
         typeof firstTextField?.value === 'string' ? firstTextField.value.trim() : null;
 
-      return {
+      const normalized: {
+        name: string | null;
+        email: string | null;
+        source: 'typeform' | 'gmail' | 'linkedin' | 'manual';
+        rawMessage: string | null;
+        metadata: Record<string, unknown>;
+      } = {
         name: get('full name', 'name', 'first name') ?? fallbackName,
         email: get('email'),
         source: 'typeform',
@@ -93,6 +99,15 @@ export class WebhookService {
           tallyResponseId: raw.data.responseId ?? null,
         },
       };
+      this.logger.log(
+        `[Tally] normalizePayload result: ${JSON.stringify({
+          name: normalized.name,
+          email: normalized.email,
+          rawMessagePresent: Boolean(normalized.rawMessage),
+          metadata: normalized.metadata,
+        })}`,
+      );
+      return normalized;
     }
 
     return {
