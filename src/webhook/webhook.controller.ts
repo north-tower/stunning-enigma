@@ -43,6 +43,21 @@ export class WebhookController {
     };
   }
 
+  @Post('/webhook/typeform')
+  @HttpCode(200)
+  async receiveTally(
+    @Body() body: any,
+    @Headers('x-webhook-secret') secret: string | undefined,
+  ): Promise<{ received: true; leadId: string }> {
+    if (!secret || secret !== process.env.WEBHOOK_SECRET) {
+      throw new UnauthorizedException('Invalid webhook secret');
+    }
+
+    const normalized = this.webhookService.normalizePayload(body, 'tally');
+    const lead = await this.webhookService.createLeadFromNormalized(normalized);
+    return { received: true, leadId: lead.id };
+  }
+
   @Get('/leads')
   async getLeads() {
     return this.webhookService.findAll();

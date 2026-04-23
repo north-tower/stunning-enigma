@@ -42,6 +42,66 @@ export class WebhookService {
     return savedLead;
   }
 
+  normalizePayload(
+    raw: any,
+    source: string,
+  ): {
+    name: string | null;
+    email: string | null;
+    source: 'typeform' | 'gmail' | 'linkedin' | 'manual';
+    rawMessage: string | null;
+    metadata: Record<string, unknown>;
+  } {
+    if (source === 'tally' && raw?.data?.fields) {
+      const fields = raw.data.fields as Array<{ label?: string; value?: unknown }>;
+
+      const get = (label: string): string | null =>
+        (fields.find((f) =>
+          (f.label ?? '').toLowerCase().includes(label.toLowerCase()),
+        )?.value as string | undefined) ?? null;
+
+      return {
+        name: get('full name'),
+        email: get('email'),
+        source: 'typeform',
+        rawMessage: get('looking for') ?? get('message'),
+        metadata: {
+          company: get('company'),
+          howDidYouHear: get('hear about'),
+          tallyResponseId: raw.data.responseId ?? null,
+        },
+      };
+    }
+
+    return {
+      name: raw?.name ?? null,
+      email: raw?.email ?? null,
+      source: (raw?.source ?? 'manual') as
+        | 'typeform'
+        | 'gmail'
+        | 'linkedin'
+        | 'manual',
+      rawMessage: raw?.message ?? null,
+      metadata: (raw?.metadata ?? {}) as Record<string, unknown>,
+    };
+  }
+
+  async createLeadFromNormalized(normalized: {
+    name: string | null;
+    email: string | null;
+    source: 'typeform' | 'gmail' | 'linkedin' | 'manual';
+    rawMessage: string | null;
+    metadata: Record<string, unknown>;
+  }): Promise<Lead> {
+    return this.createLead({
+      name: normalized.name ?? undefined,
+      email: normalized.email ?? undefined,
+      source: normalized.source,
+      message: normalized.rawMessage ?? undefined,
+      metadata: normalized.metadata,
+    });
+  }
+
   async findAll(): Promise<Lead[]> {
     return this.leadRepository.find({
       order: {
