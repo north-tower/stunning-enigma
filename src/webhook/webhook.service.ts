@@ -53,21 +53,43 @@ export class WebhookService {
     metadata: Record<string, unknown>;
   } {
     if (source === 'tally' && raw?.data?.fields) {
-      const fields = raw.data.fields as Array<{ label?: string; value?: unknown }>;
+      const fields = raw.data.fields as Array<{
+        label?: string;
+        type?: string;
+        value?: unknown;
+      }>;
 
-      const get = (label: string): string | null =>
-        (fields.find((f) =>
-          (f.label ?? '').toLowerCase().includes(label.toLowerCase()),
-        )?.value as string | undefined) ?? null;
+      const get = (...labels: string[]): string | null => {
+        const match = fields.find((f) =>
+          labels.some((label) =>
+            (f.label ?? '').toLowerCase().includes(label.toLowerCase()),
+          ),
+        );
+        const value = match?.value;
+        return typeof value === 'string' && value.trim().length > 0
+          ? value.trim()
+          : null;
+      };
+
+      const firstTextField = fields.find((f) => {
+        const value = f.value;
+        return (
+          typeof value === 'string' &&
+          value.trim().length > 0 &&
+          (f.type === 'INPUT_TEXT' || f.type === 'INPUT_NAME')
+        );
+      });
+      const fallbackName =
+        typeof firstTextField?.value === 'string' ? firstTextField.value.trim() : null;
 
       return {
-        name: get('full name'),
+        name: get('full name', 'name', 'first name') ?? fallbackName,
         email: get('email'),
         source: 'typeform',
-        rawMessage: get('looking for') ?? get('message'),
+        rawMessage: get('looking for', 'message', 'details', 'help'),
         metadata: {
           company: get('company'),
-          howDidYouHear: get('hear about'),
+          howDidYouHear: get('hear about', 'how did you hear'),
           tallyResponseId: raw.data.responseId ?? null,
         },
       };
