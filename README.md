@@ -64,6 +64,13 @@ Notes:
 - Container listens on `5601` (`http://localhost:5601` on host).
 - Copy `.env.docker.example` to `.env` and set real secrets before deploy.
 - Compose now includes a dedicated Postgres service (`sales-agent-db`) on the internal Docker network only (no host port published), so it will not conflict with existing host/container Postgres ports like `5432` or `5433`.
+- Migrations run automatically through `sales-agent-migrate` before `sales-agent-backend` starts.
+
+Manual migration run (if needed):
+
+```bash
+docker compose run --rm sales-agent-migrate
+```
 
 ## Run tests
 
