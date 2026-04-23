@@ -11,4 +11,27 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5601
+      DATABASE_URL: postgresql://${POSTGRES_USER:-play_user}:${POSTGRES_PASSWORD:-play_password}@sales-agent-db:5432/${POSTGRES_DB:-play}
+    depends_on:
+      sales-agent-db:
+        condition: service_healthy
     restart: unless-stopped
+
+  sales-agent-db:
+    image: postgres:16-alpine
+    container_name: sales-agent-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-play}
+      POSTGRES_USER: ${POSTGRES_USER:-play_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-play_password}
+    volumes:
+      - sales-agent-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-play_user} -d ${POSTGRES_DB:-play}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  sales-agent-db-data:
