@@ -61,7 +61,12 @@ docker compose down
 
 Notes:
 
-- Container listens on `5601` (`http://localhost:5601` on host).
+- Nginx reverse proxy listens on `443` and routes your custom domain to `sales-agent-backend:5601`.
+- This avoids host port `80` conflicts.
+- Set `DOMAIN` in `.env` (for example `api.yourdomain.com`).
+- Place TLS cert files at:
+  - `deploy/certs/fullchain.pem`
+  - `deploy/certs/privkey.pem`
 - Copy `.env.docker.example` to `.env` and set real secrets before deploy.
 - Compose now includes a dedicated Postgres service (`sales-agent-db`) on the internal Docker network only (no host port published), so it will not conflict with existing host/container Postgres ports like `5432` or `5433`.
 - Migrations run automatically through `sales-agent-migrate` before `sales-agent-backend` starts.
@@ -70,6 +75,25 @@ Manual migration run (if needed):
 
 ```bash
 docker compose run --rm sales-agent-migrate
+```
+
+## Custom domain setup
+
+1. In your DNS provider, create an `A` record for your domain/subdomain pointing to your VM public IP.
+2. Set `DOMAIN` in `.env` to that hostname.
+3. Generate/copy TLS certs to `deploy/certs`:
+   - `fullchain.pem`
+   - `privkey.pem`
+4. Start stack:
+
+```bash
+docker compose up -d --build
+```
+
+5. Verify:
+
+```bash
+curl -I https://<your-domain>
 ```
 
 ## Run tests

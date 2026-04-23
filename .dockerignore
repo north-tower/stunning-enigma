@@ -9,3 +9,4 @@ test
 *.log
 pnpm-debug.log*
 README.md
+deploy/certs
